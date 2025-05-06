@@ -77,4 +77,21 @@ Set the default org mode directory.
 (setq org-hide-emphasis-markers t)
 #+end_src
 
+** Extras
 
+Helper function to change the old legacy UPPERCASE syntax to lowercase syntax for org mode.
+
+#+begin_src emacs-lisp
+(defun org-syntax-convert-keyword-case-to-lower ()
+  "Convert all #+KEYWORDS to #+keywords."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((count 0)
+          (case-fold-search nil))
+      (while (re-search-forward "^[ \t]*#\\+[A-Z_]+" nil t)
+        (unless (string-match-p "RESULTS" (match-string 0))
+          (replace-match (downcase (match-string 0)) t)
+          (setq count (1+ count))))
+    (message "Replaced %d occurances" count))))
+#+end_src

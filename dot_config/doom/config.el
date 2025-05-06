@@ -31,3 +31,16 @@
 
 (setq org-direectory "~/org/")
 (setq org-hide-emphasis-markers t)
+
+(defun org-syntax-convert-keyword-case-to-lower ()
+  "Convert all #+KEYWORDS to #+keywords."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((count 0)
+          (case-fold-search nil))
+      (while (re-search-forward "^[ \t]*#\\+[A-Z_]+" nil t)
+        (unless (string-match-p "RESULTS" (match-string 0))
+          (replace-match (downcase (match-string 0)) t)
+          (setq count (1+ count))))
+    (message "Replaced %d occurances" count))))
