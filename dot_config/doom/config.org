@@ -17,6 +17,82 @@ Set name and email address.
       auth-source-cache-expiry nil)
 #+end_src
 
+** Basic
+
+#+begin_src emacs-lisp
+
+(setq auto-save-default t
+      make-backup-files t)
+
+(setq confirm-kill-emacs nil)
+#+end_src
+
+** Whichkey
+
+Speed up the whichkey popup.
+
+#+begin_src emacs-lisp
+
+(setq which-key-idle-delay 0.2)
+#+end_src
+
+
+* Package Configurations
+
+** Speed
+
+
+#+begin_src emacs-lisp
+
+(use-package! gcmh
+  :init
+  (setq gcmh-idle-delay 5
+        gcmh-high-cons-threshold (* 256 1024 1024))
+  :config
+  (gcmh-mode 1))
+
+(setq gc-cons-threshold 200000000)
+#+end_src
+
+
+** mu4e
+
+#+begin_src emacs-lisp
+
+(after! mu4e
+  (setq sendmail-program (executable-find "msmtp")
+        send-mail-function #'smtpmail-send-it
+        message-sendmail-f-is-evil t
+        message-sendmail-extra-arguments '("--read-envelope-from")
+        message-send-mail-function #'message-send-mail-with-sendmail))
+
+(set-email-account! "gmail"
+  '((mu4e-sent-messages-behavior 'delete)
+    (mu4e-sent-folder       . "/gmail/Sent")
+    (mu4e-drafts-folder     . "/gmail/Drafts")
+    (mu4e-trash-folder      . "/gmail/Trash")
+    (mu4e-refile-folder     . "/gmail/Archive")
+    (smtpmail-smtp-user     . "colin.uken@gmail.com")
+    (smtpmail-smtp-server   . "smtp.gmail.com")
+    (mu4e-compose-signature . "Colin Uken"))
+  t)
+
+(set-email-account! "icloud"
+  '((mu4e-sent-folder       . "/icloud/Sent Messages")
+    (mu4e-drafts-folder     . "/icloud/Drafts")
+    (mu4e-trash-folder      . "/icloud/Deleted Messages")
+    (mu4e-refile-folder     . "/icloud/Archive")
+    (smtpmail-smtp-user     . "cuken@cuken.dev")
+    (smtpmail-smtp-server   . "smtp.mail.me.com")
+    (smtpmail-smtp-service  . 465)
+    (mu4e-compose-signature . "Colin Uken"))
+  t)
+
+;;(setq +mu4e-gmail-accounts '(("colin.uken@gmail.com" . "/gmail")))
+
+;; Enable automatic email retrieval and udpate.
+(setq mu4e-update-interval (* 60 5))
+#+end_src
 
 * Theme Configuration
 
@@ -48,6 +124,14 @@ Set the theme and the line number style
 (setq display-line-numbers-type t)
 #+end_src
 
+Maintain terminal transparency in Doom Emacs
+
+#+begin_src emacs-lisp
+(after! doom-themes
+  (unless (display-graphic-p)
+    (set-face-background 'default' "undefined")))
+#+end_src
+
 *** Modeline Setup
 
 #+begin_src elisp
@@ -68,13 +152,50 @@ Set the theme and the line number style
 #+end_src
 
 
-** Org Mode
+*** Line Numbering
+
+Set to relative line numbering:
+
+#+begin_src emacs-lisp
+(setq display-line-numbers-type 'relative)
+#+end_src
+
+*** Full-screen on launch
+
+#+begin_src emacs-lisp
+(add-hook 'window-setup-hook #'toggle-frame-maximized)
+
+#+end_src
+
+** Org
+
+*** General
 
 Set the default org mode directory.
 
 #+begin_src elisp
-(setq org-direectory "~/org/")
+(setq org-directory "~/org/")
 (setq org-hide-emphasis-markers t)
+#+end_src
+
+)
+
+
+*** Org Roam
+
+#+begin_src emacs-lisp
+
+(setq org-roam-directory "~/org-roam"
+      org-noter-notes-search-path '("~/org-roam"))
+
+#+end_src
+
+*** Org Noter
+
+#+begin_src emacs-lisp
+
+(setq org-noter-highlight-selected-text t)
+
 #+end_src
 
 ** Extras
@@ -95,3 +216,6 @@ Helper function to change the old legacy UPPERCASE syntax to lowercase syntax fo
           (setq count (1+ count))))
     (message "Replaced %d occurances" count))))
 #+end_src
+
+** Company
+
