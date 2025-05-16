@@ -1,0 +1,94 @@
+IMAPAccount gmail
+Host imap.gmail.com
+User colin.uken@gmail.com
+PassCmd "pass email/gmail"
+AuthMechs LOGIN
+TLSType IMAPS
+TLSVersions +1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+MaildirStore gmail-local
+Path ~/.mail/gmail/
+Inbox ~/.mail/gmail/Inbox
+SubFolders Verbatim
+
+IMAPStore gmail-remote
+Account gmail
+
+Channel gmail-inbox
+Far :gmail-remote:"INBOX"
+Near :gmail-local:"INBOX"
+CopyArrivalDate yes
+Create Both
+Expunge Both
+SyncState *
+
+Channel gmail-trash
+Far :gmail-remote:"[Gmail]/Trash"
+Near :gmail-local:"Trash"
+CopyArrivalDate yes
+Create Both
+Expunge Both
+SyncState *
+
+Channel gmail-spam
+Far :gmail-remote:"[Gmail]/Spam"
+Near :gmail-local:"Spam"
+CopyArrivalDate yes
+Create Both
+Expunge Both
+SyncState *
+
+Channel gmail-all
+Far :gmail-remote:"[Gmail]/All Mail"
+Near :gmail-local:"Archive"
+CopyArrivalDate yes
+Create Both
+Expunge Both
+SyncState *
+
+Channel gmail-drafts
+Far :gmail-remote:"[Gmail]/Drafts"
+Near :gmail-local:"Drafts"
+CopyArrivalDate yes
+Create Both
+Expunge Both
+SyncState *
+
+Group Gmail
+Channel Gmail-inbox
+Channel Gmail-trash
+Channel Gmail-all
+Channel Gmail-spam
+Channel Gmail-drafts
+
+IMAPAccount icloud
+Host imap.mail.me.com
+Port 993
+AuthMechs LOGIN
+TLSVersions +1.2
+User colin.uken
+PassCmd "pass email/icloud"
+TLSType IMAPS
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+MaildirStore icloud-local
+Subfolders Verbatim
+Path ~/.mail/icloud/
+Inbox ~/.mail/icloud/INBOX
+
+IMAPStore icloud-remote
+Account icloud
+
+Channel icloud-all
+Far :icloud-remote:
+Near :icloud-local:
+Patterns *
+CopyArrivalDate yes
+Create Near
+Expunge Both
+Sync All
+SyncState *
+
+Group icloud
+Channel icloud-all
