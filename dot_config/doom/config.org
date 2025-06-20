@@ -1,30 +1,74 @@
 #+title: Cuken's Literate Doom Config
 #+author: cuken
 
+
 * Initial Setup
+** Lexical Bindings
+
+This should make the file run a little bit quicker? (see [[https://nullprogram.com/blog/2016/12/22/][this blog post]] for more information).
+
+#+begin_src elisp
+;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
+#+end_src
+
+#+begin_src bash
+#!/usr/bin/env bash
+#+end_src
 
 ** Personal Information
 
 Set name and email address.
 
-#+begin_src elisp
-;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
+#+begin_src emacs-lisp
 
 (setq user-full-name "Colin Uken"
       user-mail-address "cuken@cuken.dev")
+      ;;calendar-location-name "Phoenix, AZ"
+      ;;calendar-standard-time-zone-name "MST")
 
 (setq auth-sources '("~/.authinfo.gpg" "~/.authinfo")
       auth-source-cache-expiry nil)
 #+end_src
 
-** Basic
+* Better Defaults
+** Simple Settings
+
+Some sensible defaults.
 
 #+begin_src emacs-lisp
 
-(setq auto-save-default t
-      make-backup-files t)
+(setq exec-path (append exec-path '("~/.local/bin")))
 
-(setq confirm-kill-emacs nil)
+(setq-default
+  delete-by-moving-to-trash t
+  x-stretch-cursor t)
+
+(setq
+ undo-limit 80000000 ; Raise undo-limit to 80Mb
+ evil-want-fine-undo t ; More granular undo support
+ show-paren-mode t ; Gurantee paren mode is shown
+ auto-save-default t ; Enable auto saving
+ password-cache-expiry nil ; Trust my personal PC
+ make-backup-files t) ; Keep backups, why not?!)
+
+(display-time-mode 1) ; Enable time in the mode-line
+(global-subword-mode 1)
+
+(setq confirm-kill-emacs nil) ; Let me leave emacs please.
+
+(global-set-key
+ [remap dabbrev-expand] 'hippie-expand)
+
+#+end_src
+
+** Auto-customizations
+
+Changes made via a customization interface are added to ~init.el~. Let's move those into a separate file.
+
+#+begin_src emacs-lisp
+(setq-default custom-file (expand-file-name ".custom.el" doom-user-dir))
+(when (file-exists-p custom-file)
+  (load custom-file))
 #+end_src
 
 ** Whichkey
@@ -35,10 +79,79 @@ Speed up the whichkey popup.
 
 (setq which-key-idle-delay 0.2)
 #+end_src
+* Theme Configuration
+** Font
 
+#+begin_src emacs-lisp
+
+;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+;; are the three important ones:
+;; (setq doom-font (font-spec :family "GeistMono Nerd Font" :size 15)
+;;      doom-variable-pitch-font (font-spec :family "Alegreya" :size 18)
+;;      doom-big-font (font-spec :family "GeistMono Nerd Font" :size 22))
+;;   presentations or streaming.
+;;
+;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
+;; font string. You generally only need these two:
+;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
+;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
+
+(add-hook! org-mode 'rainbow-mode)
+(add-hook! prog-mode 'rainbow-mode)
+
+#+end_src
+
+** Theme
+
+Set the theme and the line number style
+
+#+begin_src emacs-lisp
+(setq doom-theme `doom-one)
+(setq display-line-numbers-type t)
+#+end_src
+
+Maintain terminal transparency in Doom Emacs
+
+#+begin_src emacs-lisp
+(after! doom-themes
+  (unless (display-graphic-p)
+    (set-face-background 'default' "undefined")))
+#+end_src
+
+*** Modeline Setup
+
+#+begin_src emacs-lisp
+(setq doom-modeline-icon t)
+(setq doom-modeline-major-mode-icon t)
+(setq doom-modeline-lsp-icon t)
+(setq doom-modeline-major-mode-color-icon t)
+
+#+end_src
+
+*** Transparency
+
+#+begin_src emacs-lisp
+(set-frame-parameter (selected-frame) 'alpha '(96 . 97))
+(add-to-list 'default-frame-alist '(alpha . (96 . 97)))
+
+#+end_src
+
+*** Line Numbering
+
+Set to relative line numbering:
+
+#+begin_src emacs-lisp
+(setq display-line-numbers-type 'relative)
+#+end_src
+
+*** Full-screen on launch
+
+#+begin_src emacs-lisp
+(add-hook 'window-setup-hook #'toggle-frame-maximized)
+
+#+end_src
 
 * Package Configurations
-
 ** Speed
 
 
@@ -54,7 +167,6 @@ Speed up the whichkey popup.
 (setq gc-cons-threshold 200000000)
 #+end_src
 
-
 ** mu4e
 
 #+begin_src emacs-lisp
@@ -64,7 +176,11 @@ Speed up the whichkey popup.
         send-mail-function #'smtpmail-send-it
         message-sendmail-f-is-evil t
         message-sendmail-extra-arguments '("--read-envelope-from")
-        message-send-mail-function #'message-send-mail-with-sendmail))
+        message-send-mail-function #'message-send-mail-with-sendmail)
+  (setq mu4e-bookmarks '((:name "Unread messages" :query "flag:unread AND NOT tag:/Trash AND NOT maildir:/gmail/Trash" :key 117)
+                        (:name "Today's messages" :query "date:today..now" :key 116)
+                        (:name "Last 7 days" :query "date:7d..now" :hide-unread t :key 119)
+                        (:name "Messages with images" :query "mime:image/*" :key 112))))
 
 (set-email-account! "gmail"
   '((mu4e-sent-messages-behavior 'delete)
@@ -94,111 +210,358 @@ Speed up the whichkey popup.
 (setq mu4e-update-interval (* 60 5))
 #+end_src
 
-* Theme Configuration
-
-** Font
-
-#+begin_src emacs-lisp
-
-;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
-;; are the three important ones:
-;; (setq doom-font (font-spec :family "GeistMono Nerd Font" :size 15)
-;;      doom-variable-pitch-font (font-spec :family "Alegreya" :size 18)
-;;      doom-big-font (font-spec :family "GeistMono Nerd Font" :size 22))
-;;   presentations or streaming.
-;;
-;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
-;; font string. You generally only need these two:
-;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
-;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-
-
-#+end_src
-
-** Theme
-
-Set the theme and the line number style
-
-#+begin_src elisp
-(setq doom-theme `doom-one)
-(setq display-line-numbers-type t)
-#+end_src
-
-Maintain terminal transparency in Doom Emacs
-
-#+begin_src emacs-lisp
-(after! doom-themes
-  (unless (display-graphic-p)
-    (set-face-background 'default' "undefined")))
-#+end_src
-
-*** Modeline Setup
-
-#+begin_src elisp
-(setq doom-modeline-icon t)
-(setq doom-modeline-major-mode-icon t)
-(setq doom-modeline-lsp-icon t)
-(setq doom-modeline-major-mode-color-icon t)
-
-#+end_src
-
-
-*** Transparency
-
-#+begin_src elisp
-(set-frame-parameter (selected-frame) 'alpha '(96 . 97))
-(add-to-list 'default-frame-alist '(alpha . (96 . 97)))
-
-#+end_src
-
-
-*** Line Numbering
-
-Set to relative line numbering:
-
-#+begin_src emacs-lisp
-(setq display-line-numbers-type 'relative)
-#+end_src
-
-*** Full-screen on launch
-
-#+begin_src emacs-lisp
-(add-hook 'window-setup-hook #'toggle-frame-maximized)
-
-#+end_src
-
-** Org
-
-*** General
+* Org
+** General
 
 Set the default org mode directory.
 
-#+begin_src elisp
-(setq org-directory "~/org/")
-(setq org-hide-emphasis-markers t)
+#+begin_src emacs-lisp
+(setq org-directory "~/org"
+      org-hide-emphasis-markers t)
+
+(after! org
+  (map! :map org-mode-map
+        :n "<M-left>" #'org-do-promote
+        :n "<M-right>" #'org-do-demote)
+  (setq org-todo-keywords
+      '((sequence "TODO(t)" "NEXT(n)" "STARTED(s!)" "WAITINTG(w@/!)" "|" "DONE(d!)")
+        (sequence "SOMEDAY(o)" "|")
+        (sequence "|" "DELEGATED(g@/!)" "CANCELLED(c!)")))
+  (setq org-archive-location "~/org/archive.org::")
+  )
+
+(defun cuken/org-clock-in-if-starting ()
+  "Clock in when the task state changes to STARTED"
+  (when (and (string= org-state "STARTED")
+             (not (org-clock-is-active)))
+    (org-clock-in)))
+
+(defun cuken/org-clock-out-if-not-starting ()
+  "Clock out when leaving STRT state"
+  (when (and (org-clock-is-active)
+             (not (string= org-state "STARTED")))
+    (org-clock-out)))
+
+(add-hook 'org-after-todo-state-change-hook 'cuken/org-clock-in-if-starting
+          'org-after-todo-state-change-hook 'cuken/org-clock-out-if-not-starting)
+
+
+(setq org-log-into-drawer t)
+(setq org-clock-in-switch-to-state "STARTED")
+;(setq org-clock-out-switch-to-state nil)
 #+end_src
 
-)
-
-
-*** Org Roam
+** Strike through DONE headlines
 
 #+begin_src emacs-lisp
 
-(setq org-roam-directory "~/org-roam"
-      org-noter-notes-search-path '("~/org-roam"))
+(setq org-fontify-done-headline nil)
+(custom-set-faces
+ '(org-done ((t (:forgreound "PaleGreen"
+                 :weight normal
+                 :strike-through))))
+ '(org-headline-done
+   ((((class color) (min-colors 16) (background dark))
+     (:foreground "LightSalmon" :strike-through t)))))
 
 #+end_src
 
-*** Org Noter
+** Cleanup Inbox
 
 #+begin_src emacs-lisp
 
-(setq org-noter-highlight-selected-text t)
+(defun cuken/org-clean-up-inbox ()
+  "Archive all DONE tasks and sort the remainder by TODO order."
+  (interactive)
+  (with-current-buffer (find-file "~/org/inbox.org")
+    (cuken/org-archive-done-tasks 'file)
+    (goto-char (point-min))
+    (if (org-at-heading-p) (save-excursion (insert "\n")))
+    (org-sort-entries nil ?p)
+    (goto-char (point-min))
+    (org-sort-entries nil ?o)
+    (save-buffer)))
+
+(defun cuken/org-archive-done-tasks (&optional scope)
+  "Archive finished or cancelled tasks.
+       SCOPE can be 'file or 'tree."
+  (interactive)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (outline-previous-heading)))
+   "TODO=\"DONE\"|TODO=\"CANCELLED\"" (or scope (if (org-before-first-heading-p) 'file 'tree))))
 
 #+end_src
 
-** Extras
+** Org Capture Templates
+
+#+begin_src emacs-lisp
+
+(after! org
+  (setq org-capture-templates
+      '(("t" "Todo" entry
+         (file+headline "~/org/inbox.org" "Inbox")
+         "* TODO %^{Task}\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n%?")
+
+         ("e" "Event" entry
+         (file+headline "~/org/calendar.org" "Events")
+         "* %^{Event}\n%^{SCHEDULED}T\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:CONTACT: %(cuken/org-capture-ref-link \"~/org/contacts.org\")\n:END:\n%?")
+
+        ("d" "Deadline" entry
+         (file+headline "~/org/calendar.org" "Deadlines")
+         "* TODO %^{Task}\nDEADLINE: %^{Deadline}T\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n%?")
+
+        ("p" "Project" entry
+         (file+headline "~/org/projects.org" "Projects")
+         "* PROJ %^{Project name}\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n** TODO %?")
+
+        ("i" "Interrupting task" entry
+         (file+headline "~/org/inbox.org" "Inbox")
+         "* TODO %^{Task}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%a\n"
+         :clock-in t :clock-resume t
+         :prepend t)
+
+        ("c" "Contents to Current Clocked Task"
+         plain (clock)
+         "%i%?"
+         :empty-lines 1)
+
+        ("I" "Idea" entry
+         (file+headline "~/org/ideas.org" "Ideas")
+         "** IDEA %^{Idea}\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n%?")
+
+        ;; ("b" "Bookmark" entry
+        ;; (file+headline "~/org/bookmarks.org" "Inbox")
+        ;; "** [[%^{URL}][%^{Title}]]\n:PROPERTIES:\n:CREATED: %U\n:TAGS: %(org-capture-bookmark-tags)\n:END:\n\n"
+        ;; :empty-lines 0)
+
+        ("C" "Contact" entry
+         (file+headline "~/org/contacts.org" "Inbox")
+         "* %^{Name}
+
+:PROPERTIES:
+:CREATED: %U
+:CAPTURED: %a
+:EMAIL: %^{Email}
+:PHONE: %^{Phone}
+:BIRTHDAY: %^{Birthday +1y}u
+:LOCATION: %^{Address}
+:LAST_CONTACTED: %U
+:END:
+\\ *** Communications
+\\ *** Notes
+%?")
+
+        ("n" "Note" entry
+         (file+headline "~/org/notes.org" "Inbox")
+         "* [%<%Y-%m-%d %a>] %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:CAPTURED: %a\n:END:\n%?"
+         :prepend t))))
+
+
+(defun cuken/org-capture-ref-link (file)
+  "Create a link to a contact in contacts.org"
+  (let* ((headlines (org-map-entries
+                     (lambda ()
+                       (cons (org-get-heading t t t t)
+                             (org-id-get-create)))
+                     t
+                     (list file)))
+         (contact (completing-read "Contact: "
+                                   (mapcar #'car headlines)))
+         (id (cdr (assoc contact headlines))))
+    (format "[[id:%s][%s]]" id contact)))
+#+end_src
+
+** Org Agenda
+
+#+begin_src emacs-lisp
+
+(setq org-agenda-include-diary t
+      org-agenda-include-deadlines t
+      org-agenda-custom-commands
+      '(("n" "Next tasks" ((todo "STARTED")
+                           (todo "NEXT")))
+        ))
+
+#+end_src
+
+** Org Roam
+
+#+begin_src emacs-lisp
+
+(setq org-roam-directory "~/org/roam")
+#+end_src
+
+** Org Noter
+
+#+begin_src emacs-lisp
+
+(setq org-noter-notes-search-path '("~/org/roam")
+      org-noter-highlight-selected-text t)
+
+#+end_src
+
+* Multimedia
+** Supernote
+
+#+begin_src emacs-lisp
+
+;; (defvar cuken/supernote-export-dir "")
+;; (defvar cuken/sketches-dir "")
+;; (defun cuken/sketches-dired () (interactive) (dired cuken/sketches-dir))
+;; (defun cuken/latest-sketch (&optional skip-download)
+;;   (interactive "P")
+;;   (let ((file
+;;          (or (condition-case nil
+;;                  (and (not skip-download) (cuken/supernote-download-latest-exported-file))
+;;                (error nil))
+;;              (cuken/latest-file (list cuken/supernote-export-dir
+;;                                       cuken/sketches-dir)
+;;                                 "png\\|svg\\|jpe?g"))))
+;;     (when (called-interactively-p 'any)
+;;       (find-file file))
+;;     file))
+
+;; (defun cuken/supernote-process-latest (&optional skip-download)
+;;   (interactive "P")
+;;   (let ((file (cuken/supernote-process-sketch (cuken/latest-sketch skip-dwnload))))
+;;     (find-file file)
+;;     (find-file-other-window (concat (file-name-sans-extension file) ".txt"))))
+
+;; (defun cuken/supernote-open-latest ()
+;;   (interactive)
+;;   (find-file-other-window
+;;    (or (cuken/supernote-download-latest-exported-file)
+;;        (cuken/latest-file (list cuken/supernote-export-dir
+;;                                 cuken/sketches-dir)
+;;                           "png\\|svg\\|jpe?g:"))))
+
+;; (defun cuken/supernote-export-dired ()
+;;   (interactive)
+;;   (dired cuken/supernote-export-dir "-tl"))
+
+;; (defun cuken/image-autorotate (file)
+;;   (let ((tags (cuken/image-tags file)))
+;;     (cond
+;;      ((member "ccw" tags)
+;;       (call-process "mogrify" nil nil nil "-rotate" "270" file)
+;;       (cuken/image-rename-set file file (delete "ccw" tags)))
+;;      ((member "cw" tags)
+;;       (call-process "mogrify" nil nil nil "-rotate" "90" file)
+;;       (cuken/image-rename-set file file (delete "cw" tags)))
+;;      (t file))))
+
+;; (defun cuken/supernote-process-sketch (file)
+;;   (interactive "FFile: ")
+;;   (cuken/image-recognize file)
+;;   (setq file (cuken/sketch-rename file))
+;;   (pcase (file-name-extension file)
+;;     ((or "svg" "pdf")
+;;      (setq file
+;;            (cuken/image-store
+;;             (cuken/sketch-svg-prepare file))))
+;;     ((or "png" "jpg" "jpeg")
+;;      (setq file
+;;            (cuken/image-store
+;;             (cuken/image-autorotate
+;;              (cuken/image-autocrop
+;;               (cuken/sketch-recolor-png
+;;                file)))))))
+;;   file)
+
+;; (defun cuken/open-latest-export ()
+;;   (interactive)
+;;   (find-file (cuken/latest-file "~/Dropbox/Supernote/EXPORT")))
+
+;; (defun cuken/copy-latest-export-filename ()
+;;   (interactive)
+;;   (kill-new (cuken/latest-file "~/Dropbox/Supernote/EXPORT")))
+
+;; (defun cuken/supernote-copy-latest-download ()
+;;   (interactive)
+;;   (call-process "sn" nil nil nil (cuken/latest-file "~/Downloads"))
+;;   (message "%s" (cuken/latest-file "~/Downloads")))
+
+#+end_src
+
+#+begin_src emacs-lisp
+
+;; (defun cuken/save-to-supernote ()
+;;   (interactive)
+;;   (cond
+;;    ((derived-mode-p 'Man-mode) (cuken/save-manpage-to-supernote Man-arguments))
+;;    ((derived-mode-p 'Info-mode)
+;;     (cuken/save-info-to-supernmote
+;;      (or (and Info-current-file
+;;               (file-exists-p (concat Info-current-file ".texi"))
+;;               (concat Info-current-file ".text"))
+;;          (read-file-name
+;;           "Texi: " nil nil nil nil
+;;           (lambda (f)
+;;             (or
+;;              (string-match "\\.texi\\'" f)
+;;              (file-directory-p f))))))
+;;     ((derived-mode-p 'org-mode)
+;;      (org-latex-export-to-pdf)
+;;      (copy-file (concat (file-name-base (buffer-file-name)) ".pdf")
+;;                 (expand-file-name (concat (file-name-base (buffer-file-name)) ".pdf")
+;;                                   cuken/supernote-inbox) t))
+;;     ((or (derived-mode-p 'html-mode)
+;;          (derived-mode-p 'web-mode)
+;;          (derived-mode-p 'markdown-mode))
+;;      (call-process "pandoc" nil nil nil (buffer-file-name) "-t" "latex"
+;;                    "-o"
+;;                    (expand-file-name (concat (file-name-base (buffer-file-name)) ".pdf")
+;;                                      cuken/supernote-inbox)))
+;;     ((and (buffer-file-name) (string-match "\\.\\(pdf\\|epub\\)$" (buffer-file-name)))
+;;      (copy-file (buffer-file-name)
+;;                 (expand-file-name (file-name-nondirectory (buffer-file-name))
+;;                                   cuken/supernote-inbox)
+;;                 t))
+;;     (t
+;;      (let ((filename (expand-file-name
+;;                       (concat (file-name-base (or (buffer-file-name)
+;;                                                   (format-time-string "%Y-%m-%d-%H-%M-%S")))
+;;                               ".pdf")
+;;                       cuken/supernote-inbox)))
+;;        (with-current-buffer (htmlize-buffer)
+;;          (call-process-region
+;;           (point-min) (point-max) "wkhtmltopdf" nil nil nil "--no-background" "-"
+;;           filename)))))
+
+;; (setq htmlize-css-name-prefix "org-")
+;; (setq htmlize-head-tags "<link rel=\"stylesheet\" href=\"https://sachachua.com/assets/css/style.css\" />")
+
+#+end_src
+** Elfeed Tube
+
+RSS for youtube?!
+
+#+begin_src emacs-lisp
+
+(use-package! elfeed-tube
+  :ensure t
+  :after elfeed
+  :demand t
+  :config
+  (elfeed-tube-setup)
+
+  :bind (:map elfeed-show-mode-map
+              ("F" . elfeed-tube-fetch)
+              ([remap save-buffer] . elfeed-tube-save)
+              :map elfeed-search-mode-map
+              ("F" . elfeed-tube-fetch)
+              ([remap save-buffer] . elfeed-tube-save)))
+
+(use-package! elfeed-tube-mpv
+  :ensure t
+  :bind (:map elfeed-show-mode-map
+              ("C-c C-f" . elfeed-tube-mpv-follow-mode)
+              ("C-c C-w" . elfeed-tube-mpv-where)))
+#+end_src
+
+* Extras
 
 Helper function to change the old legacy UPPERCASE syntax to lowercase syntax for org mode.
 
@@ -217,5 +580,49 @@ Helper function to change the old legacy UPPERCASE syntax to lowercase syntax fo
     (message "Replaced %d occurances" count))))
 #+end_src
 
-** Company
+#+begin_src emacs-lisp
 
+(defun my-get-api-key-from-pass (pass-entry-path)
+  "Retrieve an API key from the 'pass' password manager.
+PASS-ENTRY-PATH is the path to the passwrod entry in 'pass'
+(e.g., \"api/my-service/key\").
+Returns the API key as a string, or nil if retrieval fails."
+  (interactive "sPass entry path (e.g., api/my-service/key): ")
+  (let* ((command (format "pass show %s" pass-entry-path))
+         (api-key-with-newline (shell-command-to-string command))
+         ;; Use `string-trim-right` to remove trailing newlines and whitespace
+         (api-key (string-trim-right api-key-with-newline)))
+    (if (string-empty-p api-key)
+        (progn
+          (message "Error: Could not retrieve API key for '%s'. Check pass entry path." pass-entry-path)
+          nil)
+      (progn
+        (message "API key for '%s' retrieved succesfully." pass-entry-path)
+        api-key))))
+
+#+end_src
+
+* AI
+** GPTEL
+
+#+begin_src emacs-lisp
+
+(use-package! gptel
+  :config
+  ;;(setq! gptel-api-key (my-get-api-key-from-pass api/open.ai/key)))
+  (setq
+   gptel-model 'mistralai/Mixtral-8x7B-Instruct-v0.1
+   gptel-org-branching-context t)
+
+  (setq gptel-backend
+   (gptel-make-openai "TogetherAI"
+                      :host "api.together.xyz"
+                      :key (my-get-api-key-from-pass "api/together.ai/key")
+                      :stream t
+                      :models '(mistralai/Mixtral-8x7B-Instruct-v0.1))))
+
+(use-package! gptel-quick
+:after gptel
+:config
+)
+#+end_src
